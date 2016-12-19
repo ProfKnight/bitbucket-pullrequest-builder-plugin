@@ -74,6 +74,8 @@ public class BitbucketRepository {
                 password = credentials.getPassword().getPlainText();
             }            
             this.client = new ApiClient(
+            	trigger.getServerHost(),
+            	trigger.getProjectName(),
                 username,
                 password,
                 trigger.getRepositoryOwner(),

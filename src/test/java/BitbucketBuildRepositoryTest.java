@@ -112,6 +112,8 @@ public class BitbucketBuildRepositoryTest {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
+      "http://localhost:7990",
+      "EX01",
       "foo",
       "bar",
       "", "",
@@ -142,6 +144,8 @@ public class BitbucketBuildRepositoryTest {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
+      "http://localhost:7990",
+      "EX01",
       "foo",
       "bar",
       "", "",
@@ -196,6 +200,8 @@ public class BitbucketBuildRepositoryTest {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
+      "http://localhost:7990",
+      "EX01",
       "foo",
       "bar",
       "", "",
@@ -242,6 +248,8 @@ public class BitbucketBuildRepositoryTest {
     BitbucketBuildTrigger trigger = new BitbucketBuildTrigger(
       "", "@hourly",
       "JenkinsCID",
+      "http://localhost:7990",
+      "EX01",
       "foo",
       "bar",
       "", "",

@@ -32,6 +32,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
     private final String projectPath;
     private final String cron;
     private final String credentialsId;
+    private final String serverHost;
+    private final String projectName;
     private final String username;
     private final String password;
     private final String repositoryOwner;
@@ -54,6 +56,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
             String projectPath,
             String cron,
             String credentialsId,
+            String serverHost,
+            String projectName,
             String username,
             String password,
             String repositoryOwner,
@@ -81,6 +85,8 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
         this.ciSkipPhrases = ciSkipPhrases;
         this.checkDestinationCommit = checkDestinationCommit;
         this.approveIfSuccess = approveIfSuccess;
+        this.projectName = projectName;
+        this.serverHost = serverHost;
     }
 
     public String getProjectPath() {
@@ -93,6 +99,14 @@ public class BitbucketBuildTrigger extends Trigger<AbstractProject<?, ?>> {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+    
+    public String getServerHost() {
+    	return serverHost;
+    }
+    
+    public String getProjectName() {
+    	return projectName;
     }
 
     public String getUsername() {

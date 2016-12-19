@@ -29,9 +29,12 @@ import org.apache.commons.httpclient.util.EncodingUtil;
  */
 public class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
-    private static final String V1_API_BASE_URL = "https://bitbucket.org/api/1.0/repositories/";
-    private static final String V2_API_BASE_URL = "https://bitbucket.org/api/2.0/repositories/";
-    private static final String COMPUTED_KEY_FORMAT = "%s-%s";    
+    private static final String V1_API_BASE_URL = "/rest/api/1.0/projects/";
+    private static final String V2_API_BASE_URL = "/rest/api/1.0/projects/";
+    private static final String COMPUTED_KEY_FORMAT = "%s-%s";   
+    private static final String PULL_REQUESTS = "pull-requests"; 
+    private String serverHost;
+    private String projectName;
     private String owner;
     private String repositoryName;
     private Credentials credentials;
@@ -68,11 +71,14 @@ public class ApiClient {
     }
     
     public <T extends HttpClientFactory> ApiClient(
+    	String serverHost, String projectName,	
         String username, String password, 
         String owner, String repositoryName, 
         String key, String name, 
         T httpFactory
     ) {
+    	this.serverHost = serverHost;
+    	this.projectName = projectName;
         this.credentials = new UsernamePasswordCredentials(username, password);
         this.owner = owner;
         this.repositoryName = repositoryName;
@@ -83,7 +89,7 @@ public class ApiClient {
 
     public List<Pullrequest> getPullRequests() {
         try {
-            return parse(get(v2("/pullrequests/")), Pullrequest.Response.class).getPullrequests();
+            return parse(get(v2("/" + PULL_REQUESTS + "/")), Pullrequest.Response.class).getPullrequests();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
@@ -93,7 +99,7 @@ public class ApiClient {
 
     public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
         try {
-            return parse(get(v1("/pullrequests/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
+            return parse(get(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
@@ -155,23 +161,23 @@ public class ApiClient {
     }
 
     public void deletePullRequestApproval(String pullRequestId) {
-        delete(v2("/pullrequests/" + pullRequestId + "/approve"));
+        delete(v2("/" + PULL_REQUESTS + "/" + pullRequestId + "/approve"));
     }
     
     public void deletePullRequestComment(String pullRequestId, String commentId) {
-        delete(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId));
+        delete(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments/" + commentId));
     }
     
     public void updatePullRequestComment(String pullRequestId, String content, String commentId) {
         NameValuePair[] data = new NameValuePair[] {
                 new NameValuePair("content", content),
         };
-        put(v1("/pullrequests/" + pullRequestId + "/comments/" + commentId), data);
+        put(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments/" + commentId), data);
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
         try {
-            return parse(post(v2("/pullrequests/" + pullRequestId + "/approve"),
+            return parse(post(v2("/" + PULL_REQUESTS + "/" + pullRequestId + "/approve"),
                 new NameValuePair[]{}), Pullrequest.Participant.class);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Invalid pull request approval response.", e);
@@ -185,7 +191,7 @@ public class ApiClient {
                 new NameValuePair("content", content),
         };
         try {
-            return parse(post(v1("/pullrequests/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
+            return parse(post(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "Invalid pull request comment response.", e);
             e.printStackTrace();
@@ -198,7 +204,7 @@ public class ApiClient {
     }
 
     private String v1(String url) {
-        return V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
+        return serverHost + V1_API_BASE_URL + this.owner + "/" + this.repositoryName + url;
     }
 
     private String v2(String path) {
@@ -206,10 +212,11 @@ public class ApiClient {
     }
 
     private String v2(String owner, String repositoryName, String path) {
-        return V2_API_BASE_URL + owner + "/" + repositoryName + path;
+        return serverHost + V2_API_BASE_URL + projectName + "/repos/" + repositoryName + path;
     }
 
     private String get(String path) {
+        logger.log(Level.INFO, "GET for " + path);
         return send(new GetMethod(path));
     }
 

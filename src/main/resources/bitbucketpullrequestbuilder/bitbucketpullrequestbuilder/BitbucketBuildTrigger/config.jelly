@@ -5,6 +5,12 @@
   <f:entry title="${%Credentials}" field="credentialsId">
       <c:select/>
   </f:entry>
+  <f:entry title="Bitbucket Server Host" field="serverHost">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Bitbucket Project Name" field="projectName">
+    <f:textbox />
+  </f:entry>
   <f:entry title="Bitbucket BasicAuth Username" field="username">
     <f:textbox />
   </f:entry>
