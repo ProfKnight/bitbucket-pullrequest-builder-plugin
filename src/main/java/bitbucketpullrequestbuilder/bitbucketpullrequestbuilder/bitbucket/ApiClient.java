@@ -13,6 +13,7 @@ import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -101,7 +102,9 @@ public class ApiClient {
 
     public List<Pullrequest> getPullRequests() {
         try {
-            return parse(get(v2("/" + PULL_REQUESTS + "/")), Pullrequest.Response.class).getValues();
+            final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, Pullrequest.class);
+            Pullrequest.Response<Pullrequest> response = parse(get(get(v2("/" + PULL_REQUESTS + "/"))), type);
+            return response.getValues();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
@@ -226,8 +229,8 @@ public class ApiClient {
             String url = rootUrl + "?pagelen=" + pageLen;
             do {
                 final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, cls);
-                Pullrequest.Response<T> response = parse(get(url), type);
-                values.addAll(response.getValues());
+                Pullrequest.Response<Pullrequest> response = parse(get(url), type);
+                values.addAll((Collection<? extends T>) response.getValues());
                 url = response.getNext();
             } while (url != null);
         } catch (Exception e) {

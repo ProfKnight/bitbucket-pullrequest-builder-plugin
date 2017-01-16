@@ -53,9 +53,11 @@ public class Pullrequest {
         public void setPageLength(int pageLength) {
             this.pageLength = pageLength;
         }
+        
         public List<T> getValues() {
             return values;
         }
+        
         public void setValues(List<T> values) {
             this.values = values;
         }
