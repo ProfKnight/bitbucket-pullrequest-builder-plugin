@@ -101,7 +101,7 @@ public class ApiClient {
 
     public List<Pullrequest> getPullRequests() {
         try {
-            return parse(get(v2("/" + PULL_REQUESTS + "/")), Pullrequest.Response.class).getPullrequests();
+            return parse(get(v2("/" + PULL_REQUESTS + "/")), Pullrequest.Response.class).getValues();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
