@@ -58,7 +58,7 @@ public class BitbucketBuilds {
         } else {
             buildUrl = rootUrl + build.getUrl();
             BuildState state = result == Result.SUCCESS ? BuildState.SUCCESSFUL : BuildState.FAILED;
-            repository.setBuildStatus(cause, state, buildUrl);
+            repository.setBuildStatus(cause, state, buildUrl, build.getId());
         }
 
         if ( this.trigger.getApproveIfSuccess() && result == Result.SUCCESS ) {

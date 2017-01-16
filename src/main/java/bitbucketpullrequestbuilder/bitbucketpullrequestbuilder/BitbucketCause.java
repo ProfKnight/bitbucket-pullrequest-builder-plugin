@@ -6,6 +6,8 @@ import hudson.model.Cause;
  * Created by nishio
  */
 public class BitbucketCause extends Cause {
+	private final String serverHost;
+	private final String projectName;
     private final String sourceBranch;
     private final String targetBranch;
     private final String repositoryOwner;
@@ -19,7 +21,9 @@ public class BitbucketCause extends Cause {
     private final String pullRequestAuthor;
     public static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public BitbucketCause(String sourceBranch,
+    public BitbucketCause(String serverHost,
+    		              String projectName,
+    		              String sourceBranch,
                           String targetBranch,
                           String repositoryOwner,
                           String repositoryName,
@@ -30,6 +34,8 @@ public class BitbucketCause extends Cause {
                           String sourceCommitHash,
                           String destinationCommitHash,
                           String pullRequestAuthor) {
+    	this.serverHost = serverHost;
+    	this.projectName = projectName;
         this.sourceBranch = sourceBranch;
         this.targetBranch = targetBranch;
         this.repositoryOwner = repositoryOwner;
@@ -81,8 +87,8 @@ public class BitbucketCause extends Cause {
 
     @Override
     public String getShortDescription() {
-        String description = "<a href=\"" + BITBUCKET_URL + this.getDestinationRepositoryOwner() + "/";
-        description += this.getDestinationRepositoryName() + "/pull-request/" + this.getPullRequestId();
+        String description = "<a href=\"" + this.serverHost + "/projects/" + this.projectName + "/repos/"+ this.destinationRepositoryName + "/pull-requests/"; 
+        description += this.getPullRequestId() + "/overview";
         description += "\">#" + this.getPullRequestId() + " " + this.getPullRequestTitle() + "</a>";
         return description;
     }

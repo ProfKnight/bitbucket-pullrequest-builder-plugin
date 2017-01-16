@@ -1,10 +1,15 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.ArrayList;
 import java.util.Comparator;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.BitbucketRepository;
 
 /**
  * POJOs representing the pull-requests extracted from the
@@ -15,21 +20,22 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Pullrequest {
+    private static final Logger logger = Logger.getLogger(Pullrequest.class.getName());
 
-    private String     description;
-    private Boolean    closeSourceBranch;
-    private String     title;
-    private Revision   destination;
-    private String     reason;
-    private String     closedBy;
-    private Revision   source;
-    private String     state;
-    private String     createdOn;
-    private String     updatedOn;
-    private String     mergeCommit;
     private String     id;
+    private String     version;
+    private String     title;
+    private String     description;
+    private String     state;
+    private Boolean    open;
+    private Boolean    closed;
+    private String     createdDate;
+    private String     updatedDate;
+    private Reference  toRef;
+    private Reference  fromRef;
+    private Boolean    locked;
     private Author     author;
-
+    
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Response {
         private int pageLength;
@@ -68,65 +74,191 @@ public class Pullrequest {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Revision {
-        private Repository repository;
-        private Branch branch;
-        private Commit commit;
+    public static class Reference {
+    	private String id;
+    	private String displayId;
+    	private String latestCommit;
+    	private Repository repository;
+    	
+    	public String getId() {
+    		return id;
+    	}
+    	
+    	public void setId(String id) {
+    		this.id = id;
+    	}
+    	
+    	public String getDisplayId() {
+    		return displayId;
+    	}
+    	
+    	public void setDisplayId(String displayId) {
+    		this.displayId = displayId;
+    	}
+    	
+    	public String getLatestCommit() {
+    		return latestCommit;
+    	}
+    	
+    	public void setLatestCommit(String commit) {
+    		this.latestCommit = commit;
+    	}
+    	
+    	public Repository getRepository() {
+    		return repository;
+    	}
+    	
+    	public void setRepository(Repository repository) {
+    		this.repository = repository;
+    	}
+    }
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Clone {
+    	private String href;
+    	private String name;
+    	
+    	public String getHref() {
+    		return href;
+    	}
+    	
+    	public void setHref(String href) {
+    		this.href = href;
+    	}
+    	
+    	public String getName() {
+    		return name;
+    	}
+    	
+    	public void setName(String name) {
+    		this.name = name;
+    	}
+    }
+    
+    @JsonIgnoreProperties(ignoreUnknown = true) 
+    public static class Links {
+    	private ArrayList<Clone> clone;
+    	
+    	public ArrayList<Clone> getClone() {
+    		return clone;
+    	}
+    	
+    	public void setClone(ArrayList<Clone> clone) {
+    		this.clone = clone;
+    	}
+    }
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Repository {
+        private String slug;
+        private String id;
+        private String name;
+        private Project project;
+        private Links links;
+        
+        public String getSlug() {
+            return slug;
+        }
 
-        public Repository getRepository() {
-            return repository;
+        public void setSlug(String slug) {
+        	this.slug = slug;
         }
-        public void setRepository(Repository repository) {
-            this.repository = repository;
+        
+        public String getId() {
+        	return id;
         }
-        public Branch getBranch() {
-            return branch;
+        
+        public void setId(String id) {
+        	this.id = id;
         }
-        public void setBranch(Branch branch) {
-            this.branch = branch;
+        
+        public String getName() {
+            return name;
         }
-        public Commit getCommit() {
-            return commit;
+        
+        public void setName(String name) {
+            this.name = name;
         }
-        public void setCommit(Commit commit) {
-            this.commit = commit;
+        
+        public Project getProject() {
+            return project;
+        }
+        
+        public void setProject(Project project) {
+            this.project = project;
+        }
+        
+        public Links getLinks() {
+        	return links;
+        }
+        
+        public void setLinks(Links links) {
+        	this.links = links;
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Repository {
-        private String fullName;
-        private String name;
-        private String ownerName;
-        private String repositoryName;
-
-        @JsonProperty("full_name")
-        public String getFullName() {
-            return fullName;
-        }
-        @JsonProperty("full_name")
-        public void setFullName(String fullName) {
-            // Also extract owner- and reponame
-            if (name != null) {
-                this.ownerName = fullName.split("/")[0];
-                this.repositoryName = fullName.split("/")[1];
-            }
-            this.fullName = fullName;
-        }
-        public String getName() {
-            return name;
-        }
-        public void setName(String name) {
-            this.name = name;
-        }
-        public String getOwnerName() {
-            return ownerName;
-        }
-        public String getRepositoryName() {
-            return repositoryName;
-        }
+    public static class Owner {
+    	private String name;
+    	
+    	public String getName() {
+    		return name;
+    	}
+    	
+    	public void setName(String name) {
+    		this.name = name;
+    	}
     }
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Project {
+    	private String key;
+    	private String id;
+    	private String name;
+    	private String type;
+    	private Owner owner;
+    	
+    	public String getKey() {
+    		return key;
+    	}
+    	
+    	public void setKey(String key) {
+    		this.key = key;
+    	}
 
+    	public String getId() {
+    		return id;
+    	}
+    	
+    	public void setId(String id) {
+    		this.id = id;
+    	}
+
+    	public String getName() {
+    		return name;
+    	}
+    	
+    	public void setName(String name) {
+    		this.name = name;
+    	}
+    	
+    	public String getType() {
+    		return type;
+    	}
+    	
+    	public void setType(String type) {
+    		this.type = type;
+    	}
+    	
+    	public Owner getOwner() {
+    		return owner;
+    	}
+    	
+    	public void setOwner(Owner owner) {
+    		this.owner = owner;
+    	}
+    }
+    
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Branch {
         private String name;
@@ -172,15 +304,18 @@ public class Pullrequest {
             this.approved = approved;
         }
     }
-
+    
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Anchor {	
+    }
+    
     // https://confluence.atlassian.com/bitbucket/pullrequests-resource-1-0-296095210.html#pullrequestsResource1.0-POSTanewcomment
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Comment implements Comparable<Comment> {
         private Integer id;
-        private String  filename;
-        private String  content;
-        private String  updatedOn;
-        private String  createdOn;
+        private Object  properties;
+        private Integer version;
+        private String  text;
 
         public int compareTo(Comment target) {
             if (this.getId() > target.getId()) {
@@ -192,46 +327,29 @@ public class Pullrequest {
             }
         }
 
-        @JsonProperty("comment_id")
         public Integer getId() {
             return id;
         }
 
-        @JsonProperty("comment_id")
         public void setId(Integer id) {
             this.id = id;
         }
 
-        public String getFilename() {
-            return filename;
+        public Integer getVersion() {
+            return version;
         }
 
-        public void setFilename(String filename) {
-            this.filename = filename;
+        public void setVersion(Integer version) {
+            this.version = version;
         }
 
         public String getContent() {
-            return content;
+            return text;
         }
 
+        @JsonProperty("text")
         public void setContent(String content) {
-            this.content = content;
-        }
-        @JsonProperty("utc_last_updated")
-        public String getUpdatedOn() {
-            return updatedOn;
-        }
-        @JsonProperty("utc_last_updated")
-        public void setUpdatedOn(String updatedOn) {
-            this.updatedOn = updatedOn;
-        }
-        @JsonProperty("utc_created_on")
-        public String getCreatedOn() {
-            return createdOn;
-        }
-        @JsonProperty("utc_created_on")
-        public void setCreatedOn(String createdOn) {
-            this.createdOn = createdOn;
+            this.text = content;
         }
     }
     
@@ -272,16 +390,6 @@ public class Pullrequest {
         this.description = description;
     }
 
-    @JsonProperty("close_source_branch")
-    public Boolean getCloseSourceBranch() {
-        return closeSourceBranch;
-    }
-
-    @JsonProperty("close_source_branch")
-    public void setCloseSourceBranch(Boolean closeSourceBranch) {
-        this.closeSourceBranch = closeSourceBranch;
-    }
-
     public String getTitle() {
         return title;
     }
@@ -290,38 +398,20 @@ public class Pullrequest {
         this.title = title;
     }
 
-    public Revision getDestination() {
-        return destination;
+    public Reference getToRef() {
+        return toRef;
     }
 
-    public void setDestination(Revision destination) {
-        this.destination = destination;
+    public void setToRef(Reference toRef) {
+        this.toRef = toRef;
     }
 
-    public String getReason() {
-        return reason;
+    public Reference getFromRef() {
+    	return fromRef;
     }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
-    @JsonProperty("closed_by")
-    public String getClosedBy() {
-        return closedBy;
-    }
-
-    @JsonProperty("closed_by")
-    public void setClosedBy(String closedBy) {
-        this.closedBy = closedBy;
-    }
-
-    public Revision getSource() {
-        return source;
-    }
-
-    public void setSource(Revision source) {
-        this.source = source;
+    
+    public void setFromRef(Reference fromRef) {
+        this.fromRef = fromRef;
     }
 
     public String getState() {
@@ -332,34 +422,20 @@ public class Pullrequest {
         this.state = state;
     }
 
-    @JsonProperty("created_on")
-    public String getCreatedOn() {
-        return createdOn;
+    public String getCreatedDate() {
+        return createdDate;
     }
 
-    @JsonProperty("created_on")
-    public void setCreatedOn(String createdOn) {
-        this.createdOn = createdOn;
+    public void setCreatedDate(String createdDate) {
+        this.createdDate = createdDate;
     }
 
-    @JsonProperty("updated_on")
-    public String getUpdatedOn() {
-        return updatedOn;
+    public String getUpdatedDate() {
+        return updatedDate;
     }
 
-    @JsonProperty("updated_on")
-    public void setUpdatedOn(String updatedOn) {
-        this.updatedOn = updatedOn;
-    }
-
-    @JsonProperty("merge_commit")
-    public String getMergeCommit() {
-        return mergeCommit;
-    }
-
-    @JsonProperty("merge_commit")
-    public void setMergeCommit(String mergeCommit) {
-        this.mergeCommit = mergeCommit;
+    public void setUpdatedDate(String updatedDate) {
+        this.updatedDate = updatedDate;
     }
 
     public String getId() {
@@ -377,5 +453,36 @@ public class Pullrequest {
     public void setAutohor(Author author) {
       this.author = author;
     }
-
+    
+    public String getVersion() {
+    	return version;
+    }
+    
+    public void setVersion(String version) {
+    	this.version = version;
+    }
+    
+    public Boolean getOpen() {
+    	return open;
+    }
+    
+    public void setOpen(Boolean open) {
+    	this.open = open;
+    }
+    
+    public Boolean getClosed() {
+    	return closed;
+    }
+    
+    public void setClosed(Boolean closed) {
+    	this.closed = closed;
+    }
+    
+    public Boolean getLocked() {
+    	return locked;
+    }
+    
+    public void setLocked(Boolean locked) {
+    	this.locked = locked;
+    }
 }

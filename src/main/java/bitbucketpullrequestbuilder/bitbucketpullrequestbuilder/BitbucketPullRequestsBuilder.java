@@ -2,12 +2,17 @@ package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
 import hudson.model.AbstractProject;
+import hudson.plugins.git.GitSCM;
+import hudson.plugins.git.UserRemoteConfig;
+import hudson.scm.SCM;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,9 +37,24 @@ public class BitbucketPullRequestsBuilder {
     }
 
     public void run() {
-        logger.info("Build Start.");
         this.repository.init();
         Collection<Pullrequest> targetPullRequests = this.repository.getTargetPullRequests();
+        
+        SCM scm = this.project.getScm();
+        if (scm instanceof GitSCM) {
+        	GitSCM gitScm = (GitSCM)scm;        	
+        	String credentialsId = gitScm.getUserRemoteConfigs().get(0).getCredentialsId();
+        	
+        	logger.info("Credentials ID: " + credentialsId);
+
+        	if (targetPullRequests.size() > 0) {
+            	String url = targetPullRequests.iterator().next().getFromRef().getRepository().getLinks().getClone().get(0).getHref();
+            	List<UserRemoteConfig> repoList = new ArrayList<UserRemoteConfig>();
+            	logger.info("URL: " + url);
+                repoList.add(new UserRemoteConfig(url, null, null, credentialsId));
+            	GitSCM pullrequestScm = new GitSCM(repoList, gitScm.getBranches(), false, gitScm.getSubmoduleCfg(), gitScm.getBrowser(), gitScm.getGitTool(), gitScm.getExtensions()); 
+        	}            
+        }
         this.repository.addFutureBuildTasks(targetPullRequests);
     }
 

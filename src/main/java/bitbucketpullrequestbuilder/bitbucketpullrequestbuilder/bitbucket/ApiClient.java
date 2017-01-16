@@ -9,6 +9,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -22,6 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.util.EncodingUtil;
 
 /**
@@ -30,9 +32,10 @@ import org.apache.commons.httpclient.util.EncodingUtil;
 public class ApiClient {
     private static final Logger logger = Logger.getLogger(ApiClient.class.getName());
     private static final String V1_API_BASE_URL = "/rest/api/1.0/projects/";
-    private static final String V2_API_BASE_URL = "/rest/api/1.0/projects/";
+    private static final String V2_API_BASE_URL = "/rest/api/1.0";
+    private static final String V1_BUILDS_BASE_URL = "/rest/build-status/1.0";
     private static final String COMPUTED_KEY_FORMAT = "%s-%s";   
-    private static final String PULL_REQUESTS = "pull-requests"; 
+    public static final String PULL_REQUESTS = "pull-requests"; 
     private String serverHost;
     private String projectName;
     private String owner;
@@ -99,7 +102,18 @@ public class ApiClient {
 
     public List<Pullrequest.Comment> getPullRequestComments(String commentOwnerName, String commentRepositoryName, String pullRequestId) {
         try {
-            return parse(get(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments")), new TypeReference<List<Pullrequest.Comment>>() {});
+            List<Activity> activities = parse(get(v2("/" + PULL_REQUESTS + "/" + pullRequestId + "/activities")), Activity.Response.class).getActivities();
+            List<Pullrequest.Comment> comments = new ArrayList<Pullrequest.Comment>();
+            for(final Activity activity : activities) {
+            	if(activity.getAction().equals("COMMENTED") && activity.getCommentAction().equals("ADDED") && activity.getCommentAnchor() == null) {
+            		Pullrequest.Comment comment = new Pullrequest.Comment() {{
+            			setId(activity.getComment().getId());
+            			setContent(activity.getComment().getContent());
+            		}};
+            		comments.add(comment);
+            	}            	
+            }
+        	return comments;
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
             e.printStackTrace();
@@ -142,19 +156,19 @@ public class ApiClient {
 
     public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
         String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.computeAPIKey(keyEx));
-        return get(url).contains("\"state\"");
+        return true; // get(url).contains("\"state\"");
     }
 
-    public void setBuildStatus(String owner, String repositoryName, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
-        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build");
+    public void setBuildStatus(String name, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
+        String url = build_status(revision);
         String computedKey = this.computeAPIKey(keyEx);
-        NameValuePair[] data = new NameValuePair[]{
-                new NameValuePair("description", comment),
-                new NameValuePair("key", computedKey),
-                new NameValuePair("name", this.name),
-                new NameValuePair("state", state.toString()),
-                new NameValuePair("url", buildUrl),
-        };
+        String data =
+                "{\"description\":\"" + comment          + "\"," +
+                "\"key\":\""          + computedKey      + "\"," +
+                "\"name\":\""         + name        + "\"," +
+                "\"state\":\""        + state.toString() + "\"," +
+                "\"url\":\""          + buildUrl         + "\"}";
+        
         logger.log(Level.INFO, "POST state {0} to {1} with key {2} with response {3}", new Object[]{
           state, url, computedKey, post(url, data)}
         );
@@ -172,13 +186,13 @@ public class ApiClient {
         NameValuePair[] data = new NameValuePair[] {
                 new NameValuePair("content", content),
         };
-        put(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments/" + commentId), data);
+        put(v2("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments/" + commentId), data);
     }
 
     public Pullrequest.Participant postPullRequestApproval(String pullRequestId) {
         try {
             return parse(post(v2("/" + PULL_REQUESTS + "/" + pullRequestId + "/approve"),
-                new NameValuePair[]{}), Pullrequest.Participant.class);
+                ""), Pullrequest.Participant.class);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Invalid pull request approval response.", e);
             e.printStackTrace();
@@ -187,11 +201,9 @@ public class ApiClient {
     }
     
     public Pullrequest.Comment postPullRequestComment(String pullRequestId, String content) {
-        NameValuePair[] data = new NameValuePair[] {
-                new NameValuePair("content", content),
-        };
+        String data = "{\"text\": \"" + content + "\"}";
         try {
-            return parse(post(v1("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
+            return parse(post(v2("/" + PULL_REQUESTS + "/" + pullRequestId + "/comments"), data), new TypeReference<Pullrequest.Comment>() {});
         } catch(Exception e) {
             logger.log(Level.WARNING, "Invalid pull request comment response.", e);
             e.printStackTrace();
@@ -208,23 +220,36 @@ public class ApiClient {
     }
 
     private String v2(String path) {
-        return v2(this.owner, this.repositoryName, path);
+        return serverHost + V2_API_BASE_URL + "/projects/" + projectName + "/repos/" + repositoryName + path;
     }
 
     private String v2(String owner, String repositoryName, String path) {
-        return serverHost + V2_API_BASE_URL + projectName + "/repos/" + repositoryName + path;
+        return serverHost + V2_API_BASE_URL + "/users/" + owner + "/repos/" + repositoryName + path;
     }
 
+    private String build_status(String hash) {
+    	return serverHost + V1_BUILDS_BASE_URL + "/commits/" + hash;
+    }
+    
     private String get(String path) {
         logger.log(Level.INFO, "GET for " + path);
+        
         return send(new GetMethod(path));
     }
 
-    private String post(String path, NameValuePair[] data) {
+    private String post(String path, String data) {
+        logger.log(Level.INFO, "POST for " + path);
         PostMethod req = new PostMethod(path);
-        req.setRequestBody(data);
-        req.getParams().setContentCharset("utf-8");
-        return send(req);
+        try {
+			StringRequestEntity body = new StringRequestEntity(data, "application/json", null);
+			req.setRequestEntity(body);
+			
+	        return send(req);
+		} catch (UnsupportedEncodingException e) {
+			logger.log(Level.SEVERE, "Unable to create string entity {0}", e);
+		}
+        
+        return null;
     }
 
     private void delete(String path) {
