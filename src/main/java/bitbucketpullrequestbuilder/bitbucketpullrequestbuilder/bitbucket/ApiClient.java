@@ -263,10 +263,7 @@ public class ApiClient {
     private String get(String path) {
         logger.log(Level.INFO, "GET for " + path);
         
-        String response = send(new GetMethod(path));
-        logger.log(Level.INFO, "GET response -> " + response);
-        
-        return response;
+        return send(new GetMethod(path));
     }
 
     private String post(String path, String data) {

@@ -53,6 +53,11 @@ public class BitbucketPullRequestsBuilder {
             	logger.info("URL: " + url);
                 repoList.add(new UserRemoteConfig(url, null, null, credentialsId));
             	GitSCM pullrequestScm = new GitSCM(repoList, gitScm.getBranches(), false, gitScm.getSubmoduleCfg(), gitScm.getBrowser(), gitScm.getGitTool(), gitScm.getExtensions()); 
+            	try {
+            		this.project.setScm(pullrequestScm);
+            	} catch (IOException e) {
+            		logger.severe(e.getLocalizedMessage());
+            	}
         	}            
         }
         this.repository.addFutureBuildTasks(targetPullRequests);
