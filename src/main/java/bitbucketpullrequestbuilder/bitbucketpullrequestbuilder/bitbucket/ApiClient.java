@@ -5,7 +5,10 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.type.TypeFactory;
+import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
@@ -48,10 +51,16 @@ public class ApiClient {
     public static final byte MAX_KEY_SIZE_BB_API = 40;
 
     public static class HttpClientFactory {    
-        public static final HttpClientFactory INSTANCE = new HttpClientFactory(); 
+        public static final HttpClientFactory INSTANCE = new HttpClientFactory();
+        private static final int DEFAULT_TIMEOUT = 60000;
         
         public HttpClient getInstanceHttpClient() {
             HttpClient client = new HttpClient();
+
+            HttpClientParams params = client.getParams();
+            params.setConnectionManagerTimeout(DEFAULT_TIMEOUT);
+            params.setSoTimeout(DEFAULT_TIMEOUT);
+
             if (Jenkins.getInstance() == null) return client;
 
             ProxyConfiguration proxy = Jenkins.getInstance().proxy;
@@ -211,6 +220,23 @@ public class ApiClient {
         return null;
     }
 
+    private <T> List<T> getAllValues(String rootUrl, int pageLen, Class<T> cls) {
+        List<T> values = new ArrayList<T>();
+        try {
+            String url = rootUrl + "?pagelen=" + pageLen;
+            do {
+                final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, cls);
+                Pullrequest.Response<T> response = parse(get(url), type);
+                values.addAll(response.getValues());
+                url = response.getNext();
+            } while (url != null);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "invalid response.", e);
+            e.printStackTrace();
+        }
+        return values;
+    }
+
     private HttpClient getHttpClient() {
         return this.factory.getInstanceHttpClient();
     }
@@ -284,6 +310,9 @@ public class ApiClient {
 
     private <R> R parse(String response, Class<R> cls) throws IOException {
         return new ObjectMapper().readValue(response, cls);
+    }
+    private <R> R parse(String response, JavaType type) throws IOException {
+        return new ObjectMapper().readValue(response, type);
     }
     private <R> R parse(String response, TypeReference<R> ref) throws IOException {
         return new ObjectMapper().readValue(response, ref);
