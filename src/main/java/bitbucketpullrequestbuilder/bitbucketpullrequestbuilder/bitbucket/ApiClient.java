@@ -103,7 +103,7 @@ public class ApiClient {
     public List<Pullrequest> getPullRequests() {
         try {
             final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, Pullrequest.class);
-            Pullrequest.Response<Pullrequest> response = parse(get(get(v2("/" + PULL_REQUESTS + "/"))), type);
+            Pullrequest.Response<Pullrequest> response = parse(get(v2("/" + PULL_REQUESTS + "/")), type);
             return response.getValues();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
@@ -263,7 +263,10 @@ public class ApiClient {
     private String get(String path) {
         logger.log(Level.INFO, "GET for " + path);
         
-        return send(new GetMethod(path));
+        String response = send(new GetMethod(path));
+        logger.log(Level.INFO, "GET response -> " + response);
+        
+        return response;
     }
 
     private String post(String path, String data) {
