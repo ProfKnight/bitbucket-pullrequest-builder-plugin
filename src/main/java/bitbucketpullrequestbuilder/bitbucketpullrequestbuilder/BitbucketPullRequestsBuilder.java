@@ -1,6 +1,7 @@
 package bitbucketpullrequestbuilder.bitbucketpullrequestbuilder;
 
 import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest;
+import bitbucketpullrequestbuilder.bitbucketpullrequestbuilder.bitbucket.Pullrequest.Clone;
 import hudson.model.AbstractProject;
 import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserRemoteConfig;
@@ -48,15 +49,25 @@ public class BitbucketPullRequestsBuilder {
         	logger.info("Credentials ID: " + credentialsId);
 
         	if (targetPullRequests.size() > 0) {
-            	String url = targetPullRequests.iterator().next().getFromRef().getRepository().getLinks().getClone().get(0).getHref();
-            	List<UserRemoteConfig> repoList = new ArrayList<UserRemoteConfig>();
-            	logger.info("URL: " + url);
-                repoList.add(new UserRemoteConfig(url, null, null, credentialsId));
-            	GitSCM pullrequestScm = new GitSCM(repoList, gitScm.getBranches(), false, gitScm.getSubmoduleCfg(), gitScm.getBrowser(), gitScm.getGitTool(), gitScm.getExtensions()); 
-            	try {
-            		this.project.setScm(pullrequestScm);
-            	} catch (IOException e) {
-            		logger.severe(e.getLocalizedMessage());
+            	String url = null;
+            	for (Clone clone: targetPullRequests.iterator().next().getFromRef().getRepository().getLinks().getClone()) {
+            		logger.info("Clone URL : " + clone.getName());
+            		if (clone.getName().equals("http")) {
+            			url = clone.getHref();
+            			break;
+            		}
+            	}
+
+            	if (url != null && url.length() > 0) {
+	            	List<UserRemoteConfig> repoList = new ArrayList<UserRemoteConfig>();
+	            	logger.info("URL: " + url);
+	                repoList.add(new UserRemoteConfig(url, null, null, credentialsId));
+	            	GitSCM pullrequestScm = new GitSCM(repoList, gitScm.getBranches(), false, gitScm.getSubmoduleCfg(), gitScm.getBrowser(), gitScm.getGitTool(), gitScm.getExtensions()); 
+	            	try {
+	            		this.project.setScm(pullrequestScm);
+	            	} catch (IOException e) {
+	            		logger.severe(e.getLocalizedMessage());
+	            	}
             	}
         	}            
         }

@@ -167,8 +167,13 @@ public class ApiClient {
     }
 
     public boolean hasBuildStatus(String owner, String repositoryName, String revision, String keyEx) {
-        String url = v2(owner, repositoryName, "/commit/" + revision + "/statuses/build/" + this.computeAPIKey(keyEx));
-        return true; // get(url).contains("\"state\"");
+        String url = build_status(revision);
+        
+        String response = get(url);
+        
+        return response.contains("\"state\":\"SUCCESSFUL\",\"key\":\"jenkins-") ||
+        	   response.contains("\"state\":\"FAILED\",\"key\":\"jenkins-") || 
+        	   response.contains("\"state\":\"INPROGRESS\",\"key\":\"jenkins-");
     }
 
     public void setBuildStatus(String name, String revision, BuildState state, String buildUrl, String comment, String keyEx) {
@@ -263,7 +268,10 @@ public class ApiClient {
     private String get(String path) {
         logger.log(Level.INFO, "GET for " + path);
         
-        return send(new GetMethod(path));
+        String response = send(new GetMethod(path));
+        logger.log(Level.INFO, "GET respones -> " + response);
+        
+        return response;
     }
 
     private String post(String path, String data) {
