@@ -13,9 +13,11 @@ import org.codehaus.jackson.type.TypeReference;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,6 +106,7 @@ public class ApiClient {
         try {
             final JavaType type = TypeFactory.defaultInstance().constructParametricType(Pullrequest.Response.class, Pullrequest.class);
             Pullrequest.Response<Pullrequest> response = parse(get(v2("/" + PULL_REQUESTS + "/")), type);
+            
             return response.getValues();
         } catch(Exception e) {
             logger.log(Level.WARNING, "invalid pull request response.", e);
@@ -268,10 +271,7 @@ public class ApiClient {
     private String get(String path) {
         logger.log(Level.INFO, "GET for " + path);
         
-        String response = send(new GetMethod(path));
-        logger.log(Level.INFO, "GET respones -> " + response);
-        
-        return response;
+        return send(new GetMethod(path));
     }
 
     private String post(String path, String data) {

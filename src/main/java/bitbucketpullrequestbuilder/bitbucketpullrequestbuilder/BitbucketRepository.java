@@ -93,7 +93,7 @@ public class BitbucketRepository {
         List<Pullrequest> pullRequests = client.getPullRequests();
         List<Pullrequest> targetPullRequests = new ArrayList<Pullrequest>();
         for(Pullrequest pullRequest : pullRequests) {
-            if (isBuildTarget(pullRequest)) {
+            if (isBuildTarget(pullRequest) && targetPullRequests.size() < 1) {
                 targetPullRequests.add(pullRequest);
             }
         }
